@@ -59,7 +59,7 @@ const HABIT_STAKE_ABI = [
   "function checkIn(uint256 habitId, string proof)",
   "function claimRefund(uint256 habitId)",
   "function getUserHabits(address user) view returns (uint256[] memory)",
-  "function getHabitDetails(uint256 habitId) view returns (uint256 id, address owner, string name, uint256 startTime, uint256 durationInDays, uint256 dailyStake, uint256 totalStaked, uint256 checkInCount, uint256 lastCheckInTime, bool claimed, bool[] checkInHistory)",
+  "function getHabitDetails(uint256 habitId) view returns (uint256 id, address ownerAddr, string name, uint256 startTime, uint256 durationInDays, uint256 dailyStake, uint256 totalStaked, uint256 checkInCount, uint256 lastCheckInTime, bool claimed, bool[] checkInHistory)",
   "function beneficiary() view returns (address)",
   "function owner() view returns (address)",
   "function feeBasisPoints() view returns (uint256)",
@@ -373,7 +373,7 @@ export default function Home() {
     let valueWei: bigint;
     try {
       const dailyStakeWei = ethers.parseEther(dailyStakeInput);
-      if (dailyStakeWei <= 0n) throw new Error();
+      if (dailyStakeWei <= BigInt(0)) throw new Error();
       valueWei = dailyStakeWei * BigInt(duration);
     } catch {
       alert("Invalid daily stake.");
