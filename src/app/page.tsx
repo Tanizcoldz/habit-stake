@@ -18,7 +18,6 @@ import {
 import confetti from "canvas-confetti";
 import { ethers } from "ethers";
 import styles from "./page.module.css";
-import ThreeBackground from "@/components/ThreeBackground";
 import Mascot from "@/components/Mascot";
 
 // Interface for onchain Habits
@@ -68,7 +67,14 @@ const HABIT_STAKE_ABI = [
   "function withdrawFees()",
   "function setFeeBasisPoints(uint256 _feeBasisPoints)",
   "function setBeneficiary(address _beneficiary)",
-  "function transferOwnership(address newOwner)"
+  "function transferOwnership(address newOwner)",
+  "function paused() view returns (bool)",
+  "function pause()",
+  "function unpause()",
+  "function MAX_DURATION_DAYS() view returns (uint256)",
+  "function CLAIM_DEADLINE() view returns (uint256)",
+  "function pendingWithdrawals(address) view returns (uint256)",
+  "function withdrawEscrow()"
 ];
 
 export default function Home() {
@@ -359,6 +365,10 @@ export default function Home() {
     e.preventDefault();
     if (!walletConnected || !isCorrectNetwork) return;
     if (!habitName.trim()) return;
+    if (duration < 1 || duration > 365) {
+      alert("Duration must be between 1 and 365 days.");
+      return;
+    }
 
     let valueWei: bigint;
     try {
@@ -670,7 +680,7 @@ export default function Home() {
       {/* Main onboarding overlay if wallet not connected */}
       {!walletConnected ? (
         <div style={{ width: "100%", maxWidth: "900px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <main className="glass" style={{ borderRadius: "20px", padding: "3rem 2.5rem", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "3rem", marginTop: "1rem", flexWrap: "wrap-reverse" }}>
+          <main className="glass" style={{ padding: "3rem 2.5rem", display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "3rem", marginTop: "1rem", flexWrap: "wrap-reverse" }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: "1", minWidth: "240px" }}>
               <Mascot pose="MAIN" size={230} />
             </div>
@@ -712,7 +722,7 @@ export default function Home() {
           </section>
         </div>
       ) : !isCorrectNetwork ? (
-        <main className="glass" style={{ borderRadius: "20px", padding: "4rem 2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.5rem", marginTop: "1rem", maxWidth: "600px", margin: "2rem auto" }}>
+        <main className="glass" style={{ padding: "4rem 2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.5rem", marginTop: "1rem", maxWidth: "600px", margin: "2rem auto" }}>
           <AlertCircle style={{ color: "var(--monad-purple-neon)" }} size={64} />
           <h2 style={{ fontSize: "1.75rem", fontWeight: 800 }}>Wrong Network Connected</h2>
           <p style={{ color: "var(--text-secondary)", maxWidth: "450px", lineHeight: "1.6" }}>
@@ -725,13 +735,13 @@ export default function Home() {
       ) : (
         <>
           {/* Welcome Mascot Widget */}
-          <div className="glass" style={{ display: "flex", alignItems: "center", gap: "1.5rem", padding: "1.25rem 1.5rem", borderRadius: "12px", background: "var(--monad-purple-dark)", borderColor: "var(--monad-purple-border)" }}>
+          <div className="glass" style={{ display: "flex", alignItems: "center", gap: "1.5rem", padding: "1.25rem 1.5rem", background: "var(--bg-raised)", borderColor: "var(--border)" }}>
             <Mascot pose="LETSGO" size={60} />
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", flex: 1 }}>
-              <div style={{ background: "var(--monad-purple-muted)", color: "var(--monad-purple-light)", border: "1px solid var(--monad-purple-border)", borderRadius: "10px", padding: "0.6rem 1rem", fontSize: "0.85rem", fontWeight: 700, lineHeight: 1.4 }}>
-                "Don’t just promise yourself—stake it to make it! Show me the proof of your daily grind or I'm slashing your MON straight to the public goods pool."
+              <div style={{ background: "var(--purple-muted)", color: "var(--purple-text)", border: "1px solid var(--border-accent)", padding: "0.6rem 1rem", fontSize: "0.85rem", fontFamily: "var(--font-mono)", fontWeight: 400, lineHeight: 1.5 }}>
+                &quot;Don&apos;t just promise yourself&mdash;stake it to make it! Show me the proof of your daily grind or I&apos;m slashing your MON straight to the public goods pool.&quot;
               </div>
-              <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginLeft: "0.5rem", fontWeight: "800", letterSpacing: "0.5px" }}>— HABITSTAKE MASCOT</span>
+              <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", marginLeft: "0.5rem", fontFamily: "var(--font-mono)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>&mdash; HABITSTAKE MASCOT</span>
             </div>
           </div>
 
@@ -939,11 +949,11 @@ export default function Home() {
 
               <section className={styles.secondaryGrid}>
               {/* Monad details */}
-              <div className="glass" style={{ borderRadius: "16px", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: "700" }}>Contract Deployment</h3>
+              <div className="glass" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <h3 style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)" }}>Contract Deployment</h3>
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.5" }}>
                   Contract Address:
-                  <code style={{ display: "block", background: "rgba(0,0,0,0.3)", padding: "0.5rem", borderRadius: "6px", fontSize: "0.8rem", color: "var(--monad-purple-light)", marginTop: "0.25rem", wordBreak: "break-all" }}>
+                  <code style={{ display: "block", background: "var(--bg)", border: "1px solid var(--border)", padding: "0.5rem", fontSize: "0.75rem", fontFamily: "var(--font-mono)", color: "var(--purple-text)", marginTop: "0.25rem", wordBreak: "break-all" }}>
                     {CONTRACT_ADDRESS}
                   </code>
                 </p>
@@ -958,13 +968,13 @@ export default function Home() {
               </div>
 
               {/* Video Tutorial Card */}
-              <div className="glass" style={{ borderRadius: "16px", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="glass" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", userSelect: "none" }} onClick={() => setShowVideoGuide(!showVideoGuide)}>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <Play size={16} style={{ color: "var(--monad-purple-light)", fill: "currentColor" }} />
+                  <h3 style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Play size={13} style={{ color: "var(--purple-text)", fill: "currentColor" }} />
                     Video Guide
                   </h3>
-                  <span style={{ fontSize: "0.75rem", color: "var(--monad-purple-light)", fontWeight: "600", background: "var(--monad-purple-muted)", padding: "0.25rem 0.5rem", borderRadius: "4px", border: "1px solid var(--monad-purple-border)" }}>
+                  <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--purple-text)", background: "var(--purple-muted)", padding: "0.2rem 0.5rem", border: "1px solid var(--border-accent)", cursor: "pointer" }}>
                     {showVideoGuide ? "Hide" : "Show"}
                   </span>
                 </div>
@@ -988,28 +998,28 @@ export default function Home() {
 
               {/* Admin Portal Card */}
               {isAdmin && (
-                <div className="glass" style={{ borderRadius: "16px", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem", border: "1px solid rgba(131, 84, 236, 0.4)", boxShadow: "0 0 15px rgba(131, 84, 236, 0.15)" }}>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: "700", display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--monad-purple-light)" }}>
-                    <Award size={16} />
+                <div className="glass" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem", border: "1px solid var(--border-accent)" }}>
+                  <h3 style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--purple-text)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Award size={13} />
                     Admin Portal
                   </h3>
                   
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", fontSize: "0.85rem" }}>
                     <div>
-                      <span style={{ color: "var(--text-secondary)", display: "block" }}>Contract Owner:</span>
-                      <code style={{ display: "block", background: "rgba(0,0,0,0.3)", padding: "0.4rem 0.6rem", borderRadius: "6px", fontSize: "0.75rem", color: "var(--text-muted)", overflowX: "auto" }}>
+                      <span style={{ color: "var(--text-muted)", display: "block", fontFamily: "var(--font-mono)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>Contract Owner:</span>
+                      <code style={{ display: "block", background: "var(--bg)", border: "1px solid var(--border)", padding: "0.4rem 0.6rem", fontSize: "0.72rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", overflowX: "auto" }}>
                         {contractOwner}
                       </code>
                     </div>
 
-                    <div style={{ background: "rgba(131, 84, 236, 0.1)", border: "1px solid rgba(131, 84, 236, 0.2)", borderRadius: "8px", padding: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div style={{ background: "var(--purple-muted)", border: "1px solid var(--border-accent)", padding: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontWeight: 600 }}>Accumulated Fees:</span>
-                        <span style={{ fontWeight: 800, color: "var(--monad-purple-light)", fontSize: "1.1rem" }}>{accumulatedFeesState} MON</span>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>Accumulated Fees:</span>
+                        <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--purple-text)", fontSize: "1rem" }}>{accumulatedFeesState} MON</span>
                       </div>
                       <button 
                         className={styles.claimBtn}
-                        style={{ width: "100%", justifyContent: "center", background: parseFloat(accumulatedFeesState) > 0 ? "var(--monad-purple-neon)" : "rgba(255,255,255,0.05)", border: "none" }}
+                        style={{ width: "100%", justifyContent: "center", background: parseFloat(accumulatedFeesState) > 0 ? "var(--purple)" : "var(--bg-raised)", border: "1px solid var(--border)", color: parseFloat(accumulatedFeesState) > 0 ? "#fff" : "var(--text-muted)" }}
                         disabled={parseFloat(accumulatedFeesState) === 0 || txPending}
                         onClick={handleWithdrawFees}
                       >
@@ -1085,8 +1095,8 @@ export default function Home() {
             {/* Right Column: Create Commitment Form */}
             <section style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
               <form className={`${styles.createForm} glass`} onSubmit={handleCreateHabit}>
-                <h2 className={`${styles.formTitle} text-gradient`}>
-                  <Plus size={20} style={{ color: "var(--monad-purple-neon)" }} />
+                <h2 className={styles.formTitle}>
+                  <Plus size={14} style={{ color: "var(--purple)" }} />
                   Create Commitment
                 </h2>
 
@@ -1160,8 +1170,6 @@ export default function Home() {
           
         </>
       )}
-      {/* Immersive 3D Background */}
-      <ThreeBackground />
     </div>
   );
 }

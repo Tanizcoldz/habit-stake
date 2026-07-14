@@ -22,14 +22,14 @@ interface MascotProps {
 
 const POSES = {
   MAIN: { x: 20, y: 120, w: 460, h: 760 },
-  LETSGO: { x: 490, y: 395, w: 120, h: 175 },
-  FOCUS: { x: 615, y: 395, w: 120, h: 175 },
-  PLAN: { x: 740, y: 395, w: 120, h: 175 },
-  NICE: { x: 865, y: 395, w: 125, h: 175 },
+  LETSGO: { x: 505, y: 395, w: 110, h: 175 },
+  FOCUS: { x: 635, y: 395, w: 110, h: 175 },
+  PLAN: { x: 765, y: 395, w: 110, h: 175 },
+  NICE: { x: 885, y: 395, w: 110, h: 175 },
   TRACK: { x: 450, y: 590, w: 160, h: 200 },
   BUILD: { x: 615, y: 590, w: 120, h: 200 },
   WIN: { x: 735, y: 590, w: 130, h: 200 },
-  REFLECT: { x: 855, y: 590, w: 155, h: 200 },
+  REFLECT: { x: 875, y: 590, w: 135, h: 200 },
 };
 
 export default function Mascot({ pose, size = 100, className = "", style = {} }: MascotProps) {

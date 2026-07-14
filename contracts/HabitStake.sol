@@ -5,7 +5,8 @@ pragma solidity ^0.8.20;
  * @title HabitStake
  * @dev A commitment device smart contract. Users stake Monad tokens ($MON) on a daily habit.
  * Complete the habit and check-in daily to reclaim your stake. Slashed stakes are sent to a beneficiary.
- * Includes a protocol fee structure, secure owner withdrawals, and reentrancy protections.
+ * Includes a protocol fee structure, secure owner withdrawals, reentrancy protections,
+ * emergency pause mechanism, gas-safe duration caps, and beneficiary transfer protection.
  */
 contract HabitStake {
     struct Habit {
@@ -29,8 +30,20 @@ contract HabitStake {
     uint256 public feeBasisPoints = 250; // 2.5% default fee (100 = 1%)
     uint256 public accumulatedFees; // accumulated fees in wei
     
+    // Security: max duration cap to prevent gas griefing via oversized checkInHistory arrays
+    uint256 public constant MAX_DURATION_DAYS = 365;
+
+    // Security: claim deadline — users must claim within this window after habit ends
+    uint256 public constant CLAIM_DEADLINE = 180 days;
+
+    // Emergency pause state
+    bool public paused;
+    
     // Reentrancy state
     bool private locked;
+
+    // Beneficiary failed transfer escrow — pull pattern fallback
+    mapping(address => uint256) public pendingWithdrawals;
 
     mapping(uint256 => Habit) public habits;
     mapping(address => uint256[]) public userHabits;
@@ -49,10 +62,19 @@ contract HabitStake {
     event FeesWithdrawn(address indexed owner, uint256 amount);
     event FeeBasisPointsChanged(uint256 oldFeeBP, uint256 newFeeBP);
     event OwnershipTransferred(address indexed oldOwner, address indexed newOwner);
+    event Paused(address indexed by);
+    event Unpaused(address indexed by);
+    event SlashEscrowDeposited(address indexed beneficiary, uint256 amount);
+    event EscrowWithdrawn(address indexed to, uint256 amount);
 
     // Modifiers
     modifier onlyOwner() {
         require(msg.sender == owner, "Not contract owner");
+        _;
+    }
+
+    modifier whenNotPaused() {
+        require(!paused, "Contract is paused");
         _;
     }
 
@@ -69,13 +91,18 @@ contract HabitStake {
         owner = msg.sender;
     }
 
+    // ═══════════════════════════════════════════════════════════
+    //  CORE FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
+
     /**
      * @notice Create a new habit commitment and stake MON.
      * @param name The name of the habit (e.g. "Leetcode 1 Problem", "Gym 45 minutes")
-     * @param durationInDays Number of days for the commitment
+     * @param durationInDays Number of days for the commitment (max 365)
      */
-    function createHabit(string calldata name, uint256 durationInDays) external payable {
+    function createHabit(string calldata name, uint256 durationInDays) external payable whenNotPaused {
         require(durationInDays > 0, "Duration must be at least 1 day");
+        require(durationInDays <= MAX_DURATION_DAYS, "Duration exceeds maximum of 365 days");
         require(msg.value > 0, "Must stake some MON");
         require(msg.value % durationInDays == 0, "Total stake must be divisible by duration");
         
@@ -118,7 +145,7 @@ contract HabitStake {
      * @param habitId ID of the habit
      * @param proof Description or link containing proof of completion
      */
-    function checkIn(uint256 habitId, string calldata proof) external {
+    function checkIn(uint256 habitId, string calldata proof) external whenNotPaused {
         Habit storage habit = habits[habitId];
         require(msg.sender == habit.owner, "Not habit owner");
         require(!habit.claimed, "Habit already claimed");
@@ -137,6 +164,8 @@ contract HabitStake {
     /**
      * @notice Claim back staked MON for completed days. Slashes missed days to beneficiary.
      * Applies protocol fee and transfers net amounts using reentrancy-safe call method.
+     * Must be called within 180 days after the habit ends to prevent indefinite fund locking.
+     * If the beneficiary rejects the transfer, slashed funds are held in escrow (pull pattern).
      * @param habitId ID of the habit
      */
     function claimRefund(uint256 habitId) external nonReentrant {
@@ -146,6 +175,10 @@ contract HabitStake {
         
         uint256 dayIndex = getDayIndex(habitId);
         require(dayIndex >= habit.durationInDays, "Habit duration has not ended yet");
+
+        // Enforce claim deadline to prevent indefinite fund locking
+        uint256 habitEndTime = habit.startTime + (habit.durationInDays * 1 days);
+        require(block.timestamp <= habitEndTime + CLAIM_DEADLINE, "Claim deadline has passed");
         
         habit.claimed = true;
         
@@ -161,19 +194,44 @@ contract HabitStake {
 
         accumulatedFees += (refundFee + slashFee);
         
-        // Execute transfers safely using call
+        // Transfer refund to habit owner
         if (netRefund > 0) {
             (bool success, ) = payable(habit.owner).call{value: netRefund}("");
             require(success, "Refund transfer failed");
         }
         
+        // Transfer slashed funds to beneficiary — use pull pattern fallback
+        // if beneficiary is a contract that rejects ETH, escrow it instead of reverting
         if (netSlashed > 0) {
             (bool success, ) = payable(beneficiary).call{value: netSlashed}("");
-            require(success, "Slashed funds transfer failed");
+            if (!success) {
+                // Escrow the funds so the user's claim doesn't permanently revert
+                pendingWithdrawals[beneficiary] += netSlashed;
+                emit SlashEscrowDeposited(beneficiary, netSlashed);
+            }
         }
         
         emit HabitClaimed(habitId, netRefund, netSlashed);
     }
+
+    /**
+     * @notice Allow beneficiary (or anyone with pending funds) to withdraw escrowed slash funds.
+     * This is the pull-pattern fallback for when a beneficiary contract rejects direct transfers.
+     */
+    function withdrawEscrow() external nonReentrant {
+        uint256 amount = pendingWithdrawals[msg.sender];
+        require(amount > 0, "No escrowed funds");
+        pendingWithdrawals[msg.sender] = 0;
+
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Escrow withdrawal failed");
+
+        emit EscrowWithdrawn(msg.sender, amount);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ADMIN / OWNER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
 
     /**
      * @notice Withdraw collected protocol fees to the owner.
@@ -218,6 +276,29 @@ contract HabitStake {
         owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
     }
+
+    /**
+     * @notice Emergency pause — stops new habit creation and check-ins.
+     * Claims are NOT paused so users can always withdraw their funds.
+     */
+    function pause() external onlyOwner {
+        require(!paused, "Already paused");
+        paused = true;
+        emit Paused(msg.sender);
+    }
+
+    /**
+     * @notice Unpause the contract to resume normal operations.
+     */
+    function unpause() external onlyOwner {
+        require(paused, "Not paused");
+        paused = false;
+        emit Unpaused(msg.sender);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  VIEW FUNCTIONS
+    // ═══════════════════════════════════════════════════════════
 
     /**
      * @notice Get list of habit IDs owned by a user.
