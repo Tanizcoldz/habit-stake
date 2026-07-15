@@ -1075,6 +1075,7 @@ export default function Home() {
                       <video 
                         className={styles.videoPlayer}
                         src="/use_the_creature_and_make_him.mp4"
+                        poster="/video_thumbnail.png"
                         controls
                         preload="metadata"
                         playsInline
