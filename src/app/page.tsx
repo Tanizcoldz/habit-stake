@@ -714,6 +714,7 @@ export default function Home() {
               <video 
                 className={styles.videoPlayer}
                 src="/use_the_creature_and_make_him.mp4"
+                poster="/video_thumbnail.png"
                 controls
                 preload="metadata"
                 playsInline
@@ -898,9 +899,21 @@ export default function Home() {
                           )}
 
                           {!habit.claimed && habit.checkInHistory[elapsedDays] && (
-                            <div className={styles.checkinBtnChecked}>
-                              <CheckCircle size={14} />
-                              Done for Today
+                            <div className={styles.checkinBtnChecked} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                <CheckCircle size={14} />
+                                Done for Today
+                              </div>
+                              <span style={{ fontSize: "0.65rem", opacity: 0.8, fontWeight: "normal" }}>
+                                {(() => {
+                                  const nextWindow = habit.startTime + ((elapsedDays + 1) * 86400);
+                                  const diff = nextWindow - now;
+                                  if (diff <= 0) return "Refresh to check in";
+                                  const h = Math.floor(diff / 3600);
+                                  const m = Math.floor((diff % 3600) / 60);
+                                  return `Next window in ${h}h ${m}m`;
+                                })()}
+                              </span>
                             </div>
                           )}
 
@@ -948,6 +961,81 @@ export default function Home() {
 
 
               <section className={styles.secondaryGrid}>
+              
+              {/* Achievements / Collectibles */}
+              <div className="glass" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h3 style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)" }}>
+                    Trophy Room
+                  </h3>
+                  <button 
+                    onClick={() => {
+                      const text = `I'm locking in my daily habits on Monad with real skin-in-the-game! \n\nSo far I've staked ${stats.totalStaked} $MON and completed ${stats.completedCount} commitments on HabitStake. \n\nCheck it out: https://habitstaked.vercel.app/ @monad`;
+                      window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
+                    }}
+                    style={{ background: "var(--purple-muted)", color: "var(--purple-text)", border: "1px solid var(--border-accent)", padding: "0.3rem 0.6rem", fontSize: "0.65rem", fontFamily: "var(--font-mono)", cursor: "pointer", borderRadius: "4px", fontWeight: 600, transition: "all 0.2s" }}
+                    onMouseOver={(e) => (e.currentTarget.style.background = "var(--purple)")}
+                    onMouseOut={(e) => (e.currentTarget.style.background = "var(--purple-muted)")}
+                  >
+                    Share to X
+                  </button>
+                </div>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                  <div style={{ 
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", 
+                    padding: "0.75rem", 
+                    background: parseFloat(stats.totalStaked) > 0 ? "rgba(131, 84, 236, 0.1)" : "var(--bg-raised)",
+                    border: parseFloat(stats.totalStaked) > 0 ? "1px solid var(--monad-purple-border)" : "1px solid var(--border)",
+                    opacity: parseFloat(stats.totalStaked) > 0 ? 1 : 0.3,
+                    borderRadius: "8px", textAlign: "center"
+                  }}>
+                    <Mascot pose="LETSGO" size={45} />
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: parseFloat(stats.totalStaked) > 0 ? "var(--purple-text)" : "var(--text-muted)", textTransform: "uppercase" }}>Initiate</span>
+                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>Stake any MON</span>
+                  </div>
+
+                  <div style={{ 
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", 
+                    padding: "0.75rem", 
+                    background: stats.completedCount > 0 ? "rgba(16, 185, 129, 0.1)" : "var(--bg-raised)",
+                    border: stats.completedCount > 0 ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid var(--border)",
+                    opacity: stats.completedCount > 0 ? 1 : 0.3,
+                    borderRadius: "8px", textAlign: "center"
+                  }}>
+                    <Mascot pose="WIN" size={45} />
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: stats.completedCount > 0 ? "#10B981" : "var(--text-muted)", textTransform: "uppercase" }}>Discipline</span>
+                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>Finish 1 Habit</span>
+                  </div>
+
+                  <div style={{ 
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", 
+                    padding: "0.75rem", 
+                    background: parseFloat(stats.totalStaked) >= 10 ? "rgba(59, 130, 246, 0.1)" : "var(--bg-raised)",
+                    border: parseFloat(stats.totalStaked) >= 10 ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid var(--border)",
+                    opacity: parseFloat(stats.totalStaked) >= 10 ? 1 : 0.3,
+                    borderRadius: "8px", textAlign: "center"
+                  }}>
+                    <Mascot pose="NICE" size={45} />
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: parseFloat(stats.totalStaked) >= 10 ? "#3B82F6" : "var(--text-muted)", textTransform: "uppercase" }}>Whale</span>
+                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>Stake 10+ MON</span>
+                  </div>
+
+                  <div style={{ 
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem", 
+                    padding: "0.75rem", 
+                    background: stats.completedCount >= 5 ? "rgba(245, 158, 11, 0.1)" : "var(--bg-raised)",
+                    border: stats.completedCount >= 5 ? "1px solid rgba(245, 158, 11, 0.3)" : "1px solid var(--border)",
+                    opacity: stats.completedCount >= 5 ? 1 : 0.3,
+                    borderRadius: "8px", textAlign: "center"
+                  }}>
+                    <Mascot pose="FOCUS" size={45} />
+                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: stats.completedCount >= 5 ? "#F59E0B" : "var(--text-muted)", textTransform: "uppercase" }}>Creature</span>
+                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>Finish 5 Habits</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Monad details */}
               <div className="glass" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <h3 style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)" }}>Contract Deployment</h3>

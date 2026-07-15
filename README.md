@@ -8,7 +8,7 @@
 - **Description:** A Web3 productivity DApp that forces you to put your money where your mouth is. Stake MON to lock in your daily habits, and get slashed if you miss a day.
 - **Problem:** Building new habits is difficult because existing habit-tracking apps lack real skin-in-the-game. If you miss a day on a standard Web2 tracker, nothing happens—there are no real consequences for procrastination, so users easily fall off the wagon.
 - **Solution:** HabitStake solves this by introducing financial stakes on the Monad network. You define a habit (e.g., "Gym for 45 mins"), set a duration (e.g., 7 days), and lock up a daily stake of MON. Every day you check in on-chain, you secure your funds. If you miss a day, that day's stake is permanently slashed and sent to the protocol beneficiary. The very real pain of losing money forces users to stick to their commitments.
-- **Project URL:** *(Add your hosted Vercel/Railway link here)*
+- **Project URL:** [https://habitstaked.vercel.app/](https://habitstaked.vercel.app/)
 - **Github repo:** [https://github.com/Tanizcoldz/habit-stake](https://github.com/Tanizcoldz/habit-stake) | Gitlab: [https://gitlab.com/tanizcoldz/habit-stake](https://gitlab.com/tanizcoldz/habit-stake)
 - **Category:** Monad Testnet
 - **Contract address:** `0x725dd18ce2cE42138e9B32085B718B750037F850` (Deployed on Monad Testnet)
