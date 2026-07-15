@@ -714,7 +714,7 @@ export default function Home() {
               <video 
                 className={styles.videoPlayer}
                 src="/use_the_creature_and_make_him.mp4"
-                poster="/thumbnail_v2.png"
+                poster="/hero_thumbnail.png"
                 controls
                 preload="metadata"
                 playsInline
@@ -1075,7 +1075,7 @@ export default function Home() {
                       <video 
                         className={styles.videoPlayer}
                         src="/use_the_creature_and_make_him.mp4"
-                        poster="/thumbnail_v2.png"
+                        poster="/hero_thumbnail.png"
                         controls
                         preload="metadata"
                         playsInline
