@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import React, { useState, useEffect, useCallback } from "react";
 import { 
   Flame, 
@@ -679,6 +679,9 @@ export default function Home() {
         </div>
 
         <div className={styles.controlsArea}>
+          <Link href="/about" style={{ color: "var(--text-secondary)", textDecoration: "none", fontSize: "0.9rem", fontWeight: 500, marginRight: "1rem" }}>
+            About
+          </Link>
           {walletConnected && (
             <div className={styles.networkIndicator}>
               <span className={`${styles.networkDot} ${isCorrectNetwork ? styles.networkDotConnected : ""}`} />
