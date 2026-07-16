@@ -34,8 +34,8 @@ interface Habit {
   checkInHistory: boolean[]; // array of flags for each day
 }
 
-// Contract configuration (reads from env, falls back to our latest testnet deployment)
-const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x725dd18ce2cE42138e9B32085B718B750037F850").toLowerCase();
+// Contract configuration (hardcoded to Mainnet to completely bypass any Vercel cache)
+const CONTRACT_ADDRESS = "0x725dd18ce2ce42138e9b32085b718b750037f850";
 
 const MONAD_CHAIN_ID = "0x8f";
 const MONAD_PARAMS = {
