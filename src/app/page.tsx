@@ -215,6 +215,15 @@ export default function Home() {
     }
   };
 
+  // Disconnect Wallet
+  const disconnectWallet = () => {
+    setWalletConnected(false);
+    setUserAddress("");
+    setHabits([]);
+    setWalletBalance("0");
+    setIsAdmin(false);
+  };
+
   // Load habits and stats directly from the Monad Contract
   const loadOnchainData = async (address: string, provider: ethers.BrowserProvider) => {
     setLoadingHabits(true);
@@ -676,7 +685,7 @@ export default function Home() {
 
           <button 
             className={`${styles.walletBtn} ${walletConnected && isCorrectNetwork ? styles.walletBtnConnected : ""}`}
-            onClick={walletConnected ? undefined : connectWallet}
+            onClick={walletConnected ? disconnectWallet : connectWallet}
           >
             <Wallet size={16} />
             {walletConnected 
