@@ -10,9 +10,9 @@
 - **Solution:** HabitStake solves this by introducing financial stakes on the Monad network. You define a habit (e.g., "Gym for 45 mins"), set a duration (e.g., 7 days), and lock up a daily stake of MON. Every day you check in on-chain, you secure your funds. If you miss a day, that day's stake is permanently slashed and sent to the protocol beneficiary. The very real pain of losing money forces users to stick to their commitments.
 - **Project URL:** [https://habitstaked.vercel.app/](https://habitstaked.vercel.app/)
 - **Github repo:** [https://github.com/Tanizcoldz/habit-stake](https://github.com/Tanizcoldz/habit-stake) | Gitlab: [https://gitlab.com/tanizcoldz/habit-stake](https://gitlab.com/tanizcoldz/habit-stake)
-- **Category:** Monad Testnet
-- **Contract address:** `0x725dd18ce2cE42138e9B32085B718B750037F850` (Deployed on Monad Testnet)
-- **Demo video:** *(Upload `public/use_the_creature_and_make_him.mp4` to YouTube/Twitter and paste the URL here)*
+- **Category:** Monad Mainnet
+- **Contract address:** `0x725dd18ce2cE42138e9B32085B718B750037F850` (Deployed on Monad Mainnet)
+- **Demo video:** [https://youtu.be/2yUUpE4mX8k](https://youtu.be/2yUUpE4mX8k)
 - **Post URL:** *(Link to your X/Twitter post)*
 
 ## Features
@@ -34,14 +34,14 @@ cd habit-stake
 npm install
 ```
 
-3. Create a `.env.local` file in the root directory (make sure it matches `.env.example` if available, or simply use the default Monad testnet config). The deployed contract is hardcoded in the UI to fall back safely if no ENV is provided.
+3. Create a `.env.local` file in the root directory (make sure it matches `.env.example` if available, or simply use the default Monad Mainnet config). The deployed contract is hardcoded in the UI to fall back safely if no ENV is provided.
 
 4. Run the development server:
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) and connect your MetaMask or Rabby wallet (ensure it is configured to the Monad Testnet).
+5. Open [http://localhost:3000](http://localhost:3000) and connect your MetaMask or Rabby wallet (ensure it is configured to the Monad Mainnet).
 
 ## Smart Contract
 
