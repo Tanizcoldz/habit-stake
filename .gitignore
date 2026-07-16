@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+err.json
+deploy_output.txt
 
 # debug
 npm-debug.log*

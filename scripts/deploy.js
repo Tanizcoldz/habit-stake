@@ -32,6 +32,11 @@ async function main() {
             }
         },
         settings: {
+            optimizer: {
+                enabled: true,
+                runs: 200
+            },
+            evmVersion: 'paris',
             outputSelection: {
                 '*': {
                     '*': ['*']
@@ -98,4 +103,7 @@ async function main() {
     console.log("\nYou are all set! Restart your development server if needed and try the app again.");
 }
 
-main().catch(console.error);
+main().catch(err => {
+    console.error("DEPLOYMENT FAILED");
+    fs.writeFileSync('err.json', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+});

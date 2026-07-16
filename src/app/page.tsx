@@ -37,17 +37,17 @@ interface Habit {
 // Contract configuration (reads from env, falls back to our latest testnet deployment)
 const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x725dd18ce2cE42138e9B32085B718B750037F850").toLowerCase();
 
-const MONAD_CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || "0x279f"; // Default to Testnet 10143
+const MONAD_CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || "0x8f"; // Default to Mainnet 143
 const MONAD_PARAMS = {
   chainId: MONAD_CHAIN_ID,
-  chainName: process.env.NEXT_PUBLIC_CHAIN_NAME || "Monad Testnet",
+  chainName: process.env.NEXT_PUBLIC_CHAIN_NAME || "Monad Mainnet",
   nativeCurrency: {
     name: "MON",
     symbol: "MON",
     decimals: 18
   },
-  rpcUrls: [process.env.NEXT_PUBLIC_RPC_URL || "https://testnet-rpc.monad.xyz/"],
-  blockExplorerUrls: [process.env.NEXT_PUBLIC_EXPLORER_URL || "https://testnet.monadscan.com/"]
+  rpcUrls: [process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.monad.xyz/"],
+  blockExplorerUrls: [process.env.NEXT_PUBLIC_EXPLORER_URL || "https://monadscan.com/"]
 };
 
 const explorerUrl = MONAD_PARAMS.blockExplorerUrls[0].replace(/\/$/, "");
@@ -122,6 +122,7 @@ export default function Home() {
   const [newFeeBPInput, setNewFeeBPInput] = useState<string>("250");
   const [newBeneficiaryInput, setNewBeneficiaryInput] = useState<string>("");
   const [newOwnerInput, setNewOwnerInput] = useState<string>("");
+  const [escrowBalance, setEscrowBalance] = useState<string>("0");
 
   // Check if wallet is connected and on correct network
   const checkWalletState = useCallback(async () => {
@@ -243,6 +244,14 @@ export default function Home() {
         }
       } catch (e) {
         console.warn("Could not load owner/admin state", e);
+      }
+
+      // Get user's escrow balance (pending withdrawals)
+      try {
+        const pending = await contract.pendingWithdrawals(address);
+        setEscrowBalance(ethers.formatEther(pending));
+      } catch (e) {
+        console.warn("Could not load escrow balance", e);
       }
 
       // Fetch user's list of habit IDs
@@ -612,6 +621,38 @@ export default function Home() {
     } catch (err: any) {
       console.error(err);
       alert("Transfer failed: " + (err.reason || err.message));
+      setTxPending(false);
+    }
+  };
+
+  const handleWithdrawEscrow = async () => {
+    if (!walletConnected || !isCorrectNetwork) return;
+    
+    setTxPending(true);
+    setTxMessage("Withdrawing escrowed funds...");
+    setLatestTxHash("");
+    
+    try {
+      const provider = new ethers.BrowserProvider((window as any).ethereum);
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, HABIT_STAKE_ABI, signer);
+      
+      const tx = await contract.withdrawEscrow();
+      setLatestTxHash(tx.hash);
+      
+      await tx.wait();
+      setTxPending(false);
+      
+      confetti({
+        particleCount: 100,
+        spread: 60,
+        colors: ["#10B981", "#3B82F6"]
+      });
+      
+      loadOnchainData(userAddress, provider);
+    } catch (err: any) {
+      console.error(err);
+      alert("Withdrawal failed: " + (err.reason || err.message));
       setTxPending(false);
     }
   };
@@ -1084,6 +1125,28 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              {/* Escrow Balance Widget */}
+              {parseFloat(escrowBalance) > 0 && (
+                <div className="glass" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem", border: "1px solid var(--border-accent)", marginBottom: "1rem" }}>
+                  <h3 style={{ fontSize: "0.72rem", fontFamily: "var(--font-mono)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--purple-text)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Zap size={13} />
+                    Pending Escrow
+                  </h3>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)" }}>Available to Pull:</span>
+                    <span style={{ fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--purple-text)", fontSize: "1rem" }}>{escrowBalance} MON</span>
+                  </div>
+                  <button 
+                    className="glow-btn"
+                    style={{ width: "100%", justifyContent: "center", padding: "0.8rem", fontSize: "0.9rem" }}
+                    disabled={txPending}
+                    onClick={handleWithdrawEscrow}
+                  >
+                    Withdraw Escrow
+                  </button>
+                </div>
+              )}
 
               {/* Admin Portal Card */}
               {isAdmin && (
