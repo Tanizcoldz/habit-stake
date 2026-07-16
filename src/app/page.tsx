@@ -37,17 +37,17 @@ interface Habit {
 // Contract configuration (reads from env, falls back to our latest testnet deployment)
 const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x725dd18ce2cE42138e9B32085B718B750037F850").toLowerCase();
 
-const MONAD_CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN_ID || "0x8f"; // Default to Mainnet 143
+const MONAD_CHAIN_ID = "0x8f";
 const MONAD_PARAMS = {
   chainId: MONAD_CHAIN_ID,
-  chainName: process.env.NEXT_PUBLIC_CHAIN_NAME || "Monad Mainnet",
+  chainName: "Monad Mainnet",
   nativeCurrency: {
     name: "MON",
     symbol: "MON",
     decimals: 18
   },
-  rpcUrls: [process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.monad.xyz/"],
-  blockExplorerUrls: [process.env.NEXT_PUBLIC_EXPLORER_URL || "https://monadscan.com/"]
+  rpcUrls: ["https://rpc.monad.xyz/"],
+  blockExplorerUrls: ["https://monadscan.com/"]
 };
 
 const explorerUrl = MONAD_PARAMS.blockExplorerUrls[0].replace(/\/$/, "");
