@@ -264,7 +264,8 @@ export default function Home() {
       }
 
       // Fetch user's list of habit IDs
-      const habitIds: bigint[] = await contract.getUserHabits(address);
+      const rawHabitIds = await contract.getUserHabits(address);
+      const habitIds: bigint[] = Array.from(rawHabitIds || []);
       const habitsList: Habit[] = [];
       
       let staked = 0;
@@ -289,7 +290,7 @@ export default function Home() {
           checkInCount: Number(details[7]),
           lastCheckInTime: Number(details[8]),
           claimed: details[9],
-          checkInHistory: details[10]
+          checkInHistory: Array.from(details[10] || [])
         };
         
         habitsList.push(habitItem);
@@ -424,8 +425,10 @@ export default function Home() {
         colors: ["#8354EC", "#6E54FF", "#C4B5FD", "#DDD7FE"]
       });
 
-      // Reload onchain data
-      loadOnchainData(userAddress, provider);
+      // Wait 2 seconds for the RPC node to sync the new state before reloading
+      setTimeout(() => {
+        loadOnchainData(userAddress, provider);
+      }, 2000);
     } catch (err: any) {
       console.error(err);
       alert("Transaction failed: " + (err.reason || err.message));
